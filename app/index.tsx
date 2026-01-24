@@ -1,15 +1,16 @@
-import { useRouter } from "expo-router";
-import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from "react-native";
-import { useAuth } from "../lib/auth-context";
-
+import { Screen } from "@/components/ui/screen";
 import { assertDefined } from "@/lib/assert";
+import { useAuth } from "@/lib/auth-context";
 import { requestAPI, UnauthorizedError } from "@/lib/request";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useEffect } from "react";
+import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 
 export interface Purchase {
   name: string;
   creator_name: string;
+  creator_profile_picture_url: string;
   thumbnail_url: string | null;
   url_redirect_token: string;
   purchase_email: string;
@@ -49,7 +50,7 @@ export const usePurchases = () => {
 };
 
 export default function Index() {
-  const { isLoading, logout } = useAuth();
+  const { isLoading } = useAuth();
   const { data: purchases = [], isLoading: isLoadingPurchases, error } = usePurchases();
   const router = useRouter();
 
@@ -70,58 +71,52 @@ export default function Index() {
   }
 
   return (
-    <View className="flex-1 bg-[#0d0d0d]">
-      <View className="absolute top-0 right-0 left-0 z-10 h-1 bg-[#23c55e]" />
-
-      <View className="border-b border-[#2a2a2a] px-6 pt-14 pb-4">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-white">Library</Text>
-          <Pressable onPress={logout} className="rounded-lg bg-[#2a2a2a] px-4 py-2 active:bg-[#3a3a3a]">
-            <Text className="text-sm font-medium text-[#ff6b6b]">Sign Out</Text>
-          </Pressable>
-        </View>
-      </View>
-
+    <Screen>
       {isLoadingPurchases ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#ff90e8" />
         </View>
       ) : (
         <FlatList<Purchase>
+          numColumns={2}
           data={purchases}
           keyExtractor={(item) => item.url_redirect_token}
           contentContainerStyle={{ padding: 16, gap: 12 }}
+          columnWrapperStyle={{ gap: 12 }}
           renderItem={({ item }) => (
-            <Pressable
+            <TouchableOpacity
               onPress={() => router.push(`/purchase/${item.url_redirect_token}`)}
-              className="flex-row items-center gap-4 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-3 active:bg-[#252525]"
+              className="max-w-1/2 flex-1 overflow-hidden rounded border border-border bg-background"
             >
               {item.thumbnail_url ? (
                 <Image
                   source={{ uri: item.thumbnail_url }}
-                  className="h-16 w-16 rounded-lg bg-[#2a2a2a]"
+                  className="aspect-square bg-background"
                   resizeMode="cover"
                 />
               ) : (
-                <View className="h-16 w-16 items-center justify-center rounded-lg bg-[#2a2a2a]">
+                <View className="aspect-square items-center justify-center bg-background">
                   <Text className="text-2xl">📦</Text>
                 </View>
               )}
-              <View className="flex-1">
-                <Text className="text-base font-medium text-white" numberOfLines={2}>
+              <View className="border-y border-border p-2">
+                <Text className="font-sans text-base text-foreground" numberOfLines={2}>
                   {item.name}
                 </Text>
               </View>
-              <Text className="text-[#666]">›</Text>
-            </Pressable>
+              <View className="flex-row items-center gap-2 p-2">
+                <Image source={{ uri: item.creator_profile_picture_url }} className="size-4 rounded-full" />
+                <Text className="font-sans text-sm text-foreground">{item.creator_name}</Text>
+              </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View className="items-center justify-center py-20">
-              <Text className="text-lg text-[#666]">No purchases yet</Text>
+              <Text className="font-sans text-lg text-muted">No purchases yet</Text>
             </View>
           }
         />
       )}
-    </View>
+    </Screen>
   );
 }
