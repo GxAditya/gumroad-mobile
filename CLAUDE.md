@@ -2,6 +2,7 @@
 
 - Use `npx expo install <package>` instead of `npm install <package>` to install dependencies
 - Use kebab-case for all TypeScript file names
+- Place both hooks and components in the `components` directory
 - Prefer defining functions with const rather than the function keyword
 - Don't leave comments in the code
 
@@ -12,7 +13,7 @@ We use Uniwind/Tailwind for styling. It works roughly like Nativewind but with d
 ### General styling rules
 
 - We use shadcn-style named colours, defined in `app/global.css`. **Always use these named colours and do not use built-in Tailwind ones like `bg-red-500`.**
-- If a wrapped component exists in `components/styled.tsx`, use that component instead of directly using the React Native or third party one. For example, always use `StyledText` instead of `Text`.
+- If a wrapped component exists in `components/ui`, use that component instead of directly using the React Native or third party one. For example, always import `Text` from `components/ui/text` instead of `react-native`.
 
 ### Uniwind utility functions
 
