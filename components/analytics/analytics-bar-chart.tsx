@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { LayoutChangeEvent } from "react-native";
+import { LayoutChangeEvent, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 export interface ChartDataPoint {
@@ -28,6 +28,7 @@ export const useChartColors = () => {
 };
 
 export const formatCurrency = (cents: number): string => {
+  if (cents == null) return "$0.00";
   const dollars = cents / 100;
   if (dollars >= 1_000_000) {
     return `$${(dollars / 1_000_000).toFixed(1)}M`;
@@ -39,6 +40,7 @@ export const formatCurrency = (cents: number): string => {
 };
 
 export const formatNumber = (num: number): string => {
+  if (num == null) return "0";
   if (num >= 1_000_000) {
     return `${(num / 1_000_000).toFixed(1)}M`;
   }
@@ -47,6 +49,24 @@ export const formatNumber = (num: number): string => {
   }
   return num.toLocaleString();
 };
+
+export const getBarIndexFromX = (
+  x: number,
+  barWidth: number,
+  spacing: number,
+  dataLength: number,
+  initialSpacing = 0,
+): number | null => {
+  if (dataLength <= 0) return null;
+  const adjustedX = x - initialSpacing;
+  if (adjustedX <= 0) return 0;
+  const index = Math.floor(adjustedX / (barWidth + spacing));
+  return Math.max(0, Math.min(index, dataLength - 1));
+};
+
+export const CHART_HEIGHT = 120;
+export const X_AXIS_THICKNESS = 1;
+export const SELECTION_OVERLAY_HEIGHT = CHART_HEIGHT + X_AXIS_THICKNESS;
 
 export const useChartDimensions = (dataLength: number) => {
   const [containerWidth, setContainerWidth] = useState(0);
@@ -65,4 +85,29 @@ export const useChartDimensions = (dataLength: number) => {
     barWidth,
     spacing,
   };
+};
+
+export const SelectionOverlay = ({
+  activeIndex,
+  barWidth,
+  spacing,
+}: {
+  activeIndex: number;
+  barWidth: number;
+  spacing: number;
+}) => {
+  const [bodyBg] = useCSSVariable(["--color-body-bg"]);
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        top: 4,
+        height: SELECTION_OVERLAY_HEIGHT,
+        left: activeIndex * (barWidth + spacing),
+        width: barWidth,
+        backgroundColor: bodyBg as string,
+      }}
+    />
+  );
 };
