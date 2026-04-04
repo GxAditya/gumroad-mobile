@@ -88,7 +88,7 @@ export default function DownloadScreen() {
       if (
         request.url === url ||
         request.url.startsWith(env.EXPO_PUBLIC_GUMROAD_URL) ||
-        !WEBVIEW_ALLOWED_DOMAINS.some((domain) => request.url.startsWith(domain)) ||
+        WEBVIEW_ALLOWED_DOMAINS.some((domain) => request.url.startsWith(domain)) ||
         !/^https?:\/\//.test(request.url)
       )
         return true;
