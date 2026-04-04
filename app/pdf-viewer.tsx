@@ -140,8 +140,8 @@ export default function PdfViewerScreen() {
           }}
           onPageChanged={(page) => setCurrentPage(page)}
           onError={(error) => {
-            Sentry.captureException(error);
             console.error("PDF Error:", error);
+            Sentry.captureException(error);
           }}
         />
       )}

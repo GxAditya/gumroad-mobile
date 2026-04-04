@@ -48,12 +48,15 @@ const fetchCreatorStatus = async (token: string): Promise<boolean> => {
     if (e instanceof UnauthorizedError) {
       console.warn(e);
     } else {
-      Sentry.captureException(e);
       console.error(e);
+      Sentry.captureException(e);
     }
     return false;
   }
 };
+
+const isKeychainUnavailableError = (error: unknown): boolean =>
+  error instanceof Error && error.message.includes("User interaction is not allowed");
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -87,8 +90,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsCreator(creatorStatus);
         }
       } catch (error) {
-        Sentry.captureException(error);
-        console.error("Failed to load stored auth:", error);
+        if (isKeychainUnavailableError(error)) {
+          console.warn("Keychain unavailable (device may be locked):", error);
+        } else {
+          console.error("Failed to load stored auth:", error);
+          Sentry.captureException(error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -121,17 +128,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const creatorStatus = await fetchCreatorStatus(tokenResponse.access_token);
           setIsCreator(creatorStatus);
         } catch (error) {
-          Sentry.captureException(error);
           console.error("Failed to exchange code for tokens:", error);
+          Sentry.captureException(error);
         } finally {
           setIsLoading(false);
         }
       } else if (response?.type === "error") {
-        if (response.error?.code === "access_denied") {
-          console.warn("OAuth access denied by user:", response.error.message);
+        if (response.error?.code === "access_denied" || response.error?.code === "state_mismatch") {
+          console.warn("OAuth error:", response.error.code, response.error.message);
         } else {
-          Sentry.captureException(response.error);
           console.error("Auth error:", response.error);
+          Sentry.captureException(response.error);
         }
         setIsLoading(false);
       }
@@ -153,8 +160,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       queryClient.clear();
       router.replace("/login");
     } catch (error) {
-      Sentry.captureException(error);
       console.error("Failed to logout:", error);
+      Sentry.captureException(error);
     } finally {
       setIsLoading(false);
     }
@@ -175,9 +182,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       await storeTokens(tokenResponse.access_token, tokenResponse.refresh_token);
     } catch (error) {
-      Sentry.captureException(error);
+      if (isKeychainUnavailableError(error)) {
+        console.warn("Keychain unavailable (device may be locked):", error);
+        return;
+      }
       console.error("Failed to refresh token:", error);
-      // If refresh fails, log the user out
+      Sentry.captureException(error);
       await logout();
     }
   }, [logout, storeTokens]);
